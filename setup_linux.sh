@@ -15,8 +15,12 @@ echo "🤖 Setting up JumangoClaw systemd daemon..."
 echo "👤 User: $REAL_USER"
 echo "📂 Directory: $PROJECT_DIR"
 
-# Install requirements if not present using the standard environment
-# pip3 install -r requirements.txt --break-system-packages (Optional, usually run by the user first)
+echo "📦 Installing Python dependencies globally for systemd service..."
+pip3 install -r $PROJECT_DIR/requirements.txt --break-system-packages
+
+echo "🌐 Installing Chromium browser for AI Web Scraping Skill..."
+# Run playwright install as the actual user to avoid root-owned browser binaries
+su - $REAL_USER -c "playwright install --with-deps chromium"
 
 cat <<EOF > $SERVICE_FILE
 [Unit]

@@ -12,7 +12,7 @@ def execute_bash(command: str) -> str:
             shell=True,
             text=True,
             capture_output=True,
-            timeout=120
+            timeout=300
         )
         
         output = result.stdout
@@ -29,7 +29,7 @@ def execute_bash(command: str) -> str:
             
         return output
     except subprocess.TimeoutExpired:
-        return "Error: Command execution timed out after 120 seconds."
+        return "Error: Command execution timed out after 300 seconds."
     except Exception as e:
         return f"Error executing command: {str(e)}"
 

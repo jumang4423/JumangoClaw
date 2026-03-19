@@ -27,6 +27,7 @@ def process_bom():
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
         page = browser.new_page()
+        page.set_default_timeout(20000)
         
         for idx, part in enumerate(valid_parts):
             print(f"[{idx+1}/{len(valid_parts)}] Fetching {part}...")
@@ -36,9 +37,9 @@ def process_bom():
             try:
                 # Wait for at least one table row that has our part.
                 # If the part is invalid or not found, this might timeout.
-                page.wait_for_selector('tr', timeout=8000)
+                page.wait_for_selector('tr', timeout=20000)
                 # Give it a bit to render inner cells fully
-                page.wait_for_timeout(1000)
+                page.wait_for_timeout(3000)
                 
                 script = """
                 (part) => {

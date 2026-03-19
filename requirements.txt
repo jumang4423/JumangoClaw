@@ -1,3 +1,13 @@
+# --- Core Bot ---
 pyTelegramBotAPI
 openai
 python-dotenv
+
+# --- Agent Web Browsing & Scraping Skill ---
+playwright
+
+# --- JLCPCB Analytics Tool ---
+pandas
+matplotlib
+openpyxl
+xlrd
