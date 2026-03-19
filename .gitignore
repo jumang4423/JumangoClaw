@@ -1,0 +1,24 @@
+# Environments
+.env
+.venv/
+env/
+venv/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# IDEs and OS
+.idea/
+.vscode/
+.DS_Store
+
+# Project Specific
+workspace/*
+!workspace/.gitkeep
