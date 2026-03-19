@@ -173,7 +173,10 @@ def create_bot():
 
             except Exception as e:
                 logger.error(f"Worker error for user_id={user_id}: {e}", exc_info=True)
-                bot_instance.send_message(user_id, f"❌ *[Task #{task['id']} Failed]*\n{str(e)}", parse_mode='Markdown')
+                try:
+                    bot_instance.send_message(user_id, f"❌ *[Task #{task['id']} Failed]*\n{str(e)}", parse_mode='Markdown')
+                except telebot.apihelper.ApiTelegramException:
+                    bot_instance.send_message(user_id, f"❌ [Task #{task['id']} Failed]\n{str(e)}")
                 if len(get_history(user_id)) > 0:
                     remove_last_message(user_id)
             finally:
@@ -270,7 +273,10 @@ def create_bot():
             return
             
         lines = [f"`#{c['id']}` : 🕒 `{c['time']}` -> {c['prompt']}" for c in user_crons]
-        bot.reply_to(message, "⏰ *Scheduled Daily Tasks*\n" + "\n".join(lines), parse_mode='Markdown')
+        try:
+            bot.reply_to(message, "⏰ *Scheduled Daily Tasks*\n" + "\n".join(lines), parse_mode='Markdown')
+        except telebot.apihelper.ApiTelegramException:
+            bot.reply_to(message, "⏰ Scheduled Daily Tasks\n" + "\n".join(lines))
 
     @bot.message_handler(commands=['tasks'])
     def handle_tasks(message):
@@ -286,7 +292,10 @@ def create_bot():
             action = f" ({t.get('last_action', 'Thinking...')})" if t["status"] == "running" else ""
             lines.append(f"`#{t['id']}` : {t['name']} [{status}]{action}")
             
-        bot.reply_to(message, "📋 *Current Tasks*\n" + "\n".join(lines), parse_mode='Markdown')
+        try:
+            bot.reply_to(message, "📋 *Current Tasks*\n" + "\n".join(lines), parse_mode='Markdown')
+        except telebot.apihelper.ApiTelegramException:
+            bot.reply_to(message, "📋 Current Tasks\n" + "\n".join(lines))
 
     @bot.message_handler(commands=['stop'])
     def handle_stop(message):
@@ -324,7 +333,10 @@ def create_bot():
             user_input = f'[Context: User is replying directly to the following past message: "{reply_text}"]\n\n{user_input}'
         
         task = enqueue_task(user_id, user_input)
-        bot.reply_to(message, f"📥 *[Task #{task['id']} Queued]*\nTask added to background queue.", parse_mode='Markdown')
+        try:
+            bot.reply_to(message, f"📥 *[Task #{task['id']} Queued]*\nTask added to background queue.", parse_mode='Markdown')
+        except telebot.apihelper.ApiTelegramException:
+            bot.reply_to(message, f"📥 [Task #{task['id']} Queued]\nTask added to background queue.")
         start_worker_if_needed(user_id)
 
     return bot
