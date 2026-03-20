@@ -19,4 +19,4 @@ def run():
 if __name__ == '__main__':
     run()
 ```
-Execute it with `python ./workspace/your-task-dir/scrape.py`.
+Execute it with `python3 ./workspace/your-task-dir/scrape.py`.

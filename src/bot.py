@@ -208,10 +208,6 @@ def create_bot():
                         logger.info(f"Triggering cron #{c['id']} for user {user_id}")
                         prompt = f"[Cron Triggered Automatically] The scheduled time {current_time_str} has arrived. Please execute this instructional task immediately and report the results: {c['prompt']}"
                         task = enqueue_task(user_id, prompt)
-                        try:
-                            bot.send_message(user_id, f"⏰ *[Cron Triggered]* Started scheduled task #{task['id']} for {current_time_str}.", parse_mode='Markdown')
-                        except telebot.apihelper.ApiTelegramException:
-                            pass
                         start_worker_if_needed(user_id)
             
             time.sleep(10)
