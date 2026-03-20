@@ -340,3 +340,4 @@ def create_bot():
         start_worker_if_needed(user_id)
 
     return bot
+
