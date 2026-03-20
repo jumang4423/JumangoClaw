@@ -1,10 +1,19 @@
 import logging
+import os
+from src.logger_utils import JsonRingBufferHandler
 
 # Configure logging before importing other modules to ensure we catch their initialization logs
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
+
+# Add JSON Ring Buffer Handler for workspace/log.json
+log_json_path = os.path.join(os.path.dirname(__file__), "workspace", "log.json")
+json_handler = JsonRingBufferHandler(log_json_path, capacity=25)
+json_handler.setLevel(logging.INFO)
+logging.getLogger().addHandler(json_handler)
+
 logger = logging.getLogger(__name__)
 
 from src.bot import create_bot
