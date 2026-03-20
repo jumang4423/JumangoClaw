@@ -202,6 +202,16 @@ def create_bot():
                 current_time_str = now.strftime("%H:%M")
                 
                 crons = get_all_crons()
+                
+                # Silent daily memory reset at 23:59 for ALL users (saves API token costs)
+                if current_time_str == "23:59":
+                    from src.state import user_conversations
+                    all_uids = list(user_conversations.keys())
+                    for uid in all_uids:
+                        clear_history(uid)
+                    if all_uids:
+                        logger.info(f"Daily silent memory reset for {len(all_uids)} user(s)")
+                
                 for c in crons:
                     if c.get("time") == current_time_str:
                         user_id = c["user_id"]
