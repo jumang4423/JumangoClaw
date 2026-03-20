@@ -103,15 +103,15 @@ def _load_crons():
     if not os.path.exists(CRONS_FILE):
         return []
     try:
-        with open(CRONS_FILE, "r") as f:
+        with open(CRONS_FILE, "r", encoding="utf-8") as f:
             return json.load(f)
     except Exception:
         return []
 
 def _save_crons(crons):
     os.makedirs(os.path.dirname(CRONS_FILE), exist_ok=True)
-    with open(CRONS_FILE, "w") as f:
-        json.dump(crons, f, indent=4)
+    with open(CRONS_FILE, "w", encoding="utf-8") as f:
+        json.dump(crons, f, indent=4, ensure_ascii=False)
 
 def get_all_crons() -> list:
     return _load_crons()
