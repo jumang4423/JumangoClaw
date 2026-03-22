@@ -340,9 +340,9 @@ def create_bot():
         
         task = enqueue_task(user_id, user_input)
         try:
-            bot.reply_to(message, f"📥 *[Task #{task['id']} Queued]*\nTask added to background queue.", parse_mode='Markdown')
+            bot.reply_to(message, f"📥 *[Task #{task['id']} Queued]*", parse_mode='Markdown')
         except telebot.apihelper.ApiTelegramException:
-            bot.reply_to(message, f"📥 [Task #{task['id']} Queued]\nTask added to background queue.")
+            bot.reply_to(message, f"📥 [Task #{task['id']} Queued]")
         start_worker_if_needed(user_id)
 
     return bot
