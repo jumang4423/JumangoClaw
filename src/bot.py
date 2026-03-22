@@ -154,13 +154,13 @@ def create_bot():
 
                 # Finish Task
                 if final_text:
-                    base_header = f"✅ [Task #{task['id']} Finished]\n\n"
+                    base_header = f"✅ [Task #{task['id']} Finished]\n"
                     chunks = [final_text[i:i+4000] for i in range(0, len(final_text), 4000)]
                     
                     for i, chunk in enumerate(chunks):
                         try:
                             if i == 0:
-                                bot_instance.send_message(user_id, f"✅ *[Task #{task['id']} Finished]*\n\n{chunk}", parse_mode='Markdown')
+                                bot_instance.send_message(user_id, f"✅ *[Task #{task['id']} Finished]*\n{chunk}", parse_mode='Markdown')
                             else:
                                 bot_instance.send_message(user_id, chunk)
                         except telebot.apihelper.ApiTelegramException:
