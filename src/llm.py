@@ -1,5 +1,6 @@
 import logging
 import json
+import time
 from openai import OpenAI
 from src.config import OPENROUTER_API_KEY, get_system_prompt, MODEL_ID, MODEL_LIMITS
 from src.tools import BASH_TOOL_SCHEMA, SEND_FILE_TOOL_SCHEMA, ADD_CRON_TOOL_SCHEMA, DELETE_CRON_TOOL_SCHEMA
@@ -30,15 +31,20 @@ def get_ai_response(messages):
         while sum(len(str(m.get("content", ""))) for m in payload_messages) > max_chars * 0.6 and len(payload_messages) > 5:
             payload_messages.pop(2)
 
-    try:
-        response = client.chat.completions.create(
-            model=MODEL_ID,
-            messages=payload_messages,
-            tools=[BASH_TOOL_SCHEMA, SEND_FILE_TOOL_SCHEMA, ADD_CRON_TOOL_SCHEMA, DELETE_CRON_TOOL_SCHEMA],
-            extra_body={"reasoning": {"enabled": True}}
-        )
-        logger.info("Successfully received response from OpenRouter.")
-        return response.choices[0].message
-    except Exception as e:
-        logger.error(f"Error during OpenRouter API call: {str(e)}", exc_info=True)
-        raise
+    for attempt in range(3):
+        try:
+            response = client.chat.completions.create(
+                model=MODEL_ID,
+                messages=payload_messages,
+                tools=[BASH_TOOL_SCHEMA, SEND_FILE_TOOL_SCHEMA, ADD_CRON_TOOL_SCHEMA, DELETE_CRON_TOOL_SCHEMA],
+                extra_body={"reasoning": {"enabled": True}}
+            )
+            logger.info("Successfully received response from OpenRouter.")
+            return response.choices[0].message
+        except Exception as e:
+            if attempt < 2:
+                logger.warning(f"Error during OpenRouter API call: {str(e)}. Waiting 60 seconds before retrying...")
+                time.sleep(60)
+            else:
+                logger.error(f"Error during OpenRouter API call after retry: {str(e)}", exc_info=True)
+                raise
