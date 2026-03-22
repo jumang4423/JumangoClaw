@@ -11,6 +11,7 @@ logger.info("Initializing OpenAI Client for OpenRouter...")
 client = OpenAI(
     base_url="https://openrouter.ai/api/v1",
     api_key=OPENROUTER_API_KEY,
+    max_retries=0,
 )
 
 def get_ai_response(messages):

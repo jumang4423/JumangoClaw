@@ -1,18 +1,27 @@
 import subprocess
 import logging
+import os
 
 logger = logging.getLogger(__name__)
 
 def execute_bash(command: str) -> str:
     """Executes a bash command and returns truncated output."""
     logger.info(f"Executing bash command: {command}")
+    
+    env = os.environ.copy()
+    local_bin = os.path.expanduser("~/.local/bin")
+    if local_bin not in env.get("PATH", ""):
+        env["PATH"] = f"{local_bin}:{env.get('PATH', '')}"
+
     try:
         result = subprocess.run(
             command,
             shell=True,
             text=True,
             capture_output=True,
-            timeout=300
+            timeout=300,
+            env=env,
+            executable="/bin/bash"
         )
         
         output = result.stdout
