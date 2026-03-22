@@ -4,9 +4,9 @@ import json
 import threading
 from src.config import TELEGRAM_KEY
 from src.state import (
-    clear_history, add_message, get_history, remove_last_message, 
     set_abort_flag, get_abort_flag, get_user_queue, enqueue_task, 
-    get_all_tasks, cancel_task, active_tasks, get_all_crons, add_cron, delete_cron
+    get_all_tasks, cancel_task, active_tasks, get_all_crons, add_cron, delete_cron,
+    get_all_oneshots, add_oneshot, delete_oneshot
 )
 import time
 from datetime import datetime
@@ -152,6 +152,44 @@ def create_bot():
                             except Exception as e:
                                 add_message(user_id, {"role": "tool", "tool_call_id": tool_call.id, "name": tool_call.function.name, "content": f"Delete cron failed: {str(e)}"})
 
+                        elif tool_call.function.name == "add_oneshot":
+                            try:
+                                args = json.loads(tool_call.function.arguments)
+                                time_str = args.get("datetime", "")
+                                prompt = args.get("prompt", "")
+                                
+                                task["last_action"] = f"add_oneshot ({time_str})"
+                                active_tasks[user_id] = task
+                                
+                                c = add_oneshot(user_id, time_str, prompt)
+                                output = f"Successfully scheduled one-shot task #{c['id']} for {time_str} with prompt: {prompt}"
+                                logger.info(output)
+                                task.setdefault("logs", []).append(f"> add_oneshot {time_str} -> {prompt[:20]}...\n(Success)")
+                                
+                                add_message(user_id, {"role": "tool", "tool_call_id": tool_call.id, "name": tool_call.function.name, "content": output})
+                            except Exception as e:
+                                add_message(user_id, {"role": "tool", "tool_call_id": tool_call.id, "name": tool_call.function.name, "content": f"Add oneshot failed: {str(e)}"})
+
+                        elif tool_call.function.name == "delete_oneshot":
+                            try:
+                                args = json.loads(tool_call.function.arguments)
+                                oneshot_id = args.get("oneshot_id")
+                                
+                                task["last_action"] = f"delete_oneshot #{oneshot_id}"
+                                active_tasks[user_id] = task
+                                
+                                if delete_oneshot(user_id, oneshot_id):
+                                    output = f"Successfully deleted one-shot task #{oneshot_id}"
+                                    task.setdefault("logs", []).append(f"> delete_oneshot #{oneshot_id}\n(Success)")
+                                else:
+                                    output = f"Error: One-shot task #{oneshot_id} not found."
+                                    task.setdefault("logs", []).append(f"> delete_oneshot #{oneshot_id}\n(Error)")
+                                    
+                                logger.info(output)
+                                add_message(user_id, {"role": "tool", "tool_call_id": tool_call.id, "name": tool_call.function.name, "content": output})
+                            except Exception as e:
+                                add_message(user_id, {"role": "tool", "tool_call_id": tool_call.id, "name": tool_call.function.name, "content": f"Delete oneshot failed: {str(e)}"})
+
                 # Finish Task
                 if final_text:
                     base_header = f"✅ [Task #{task['id']} Finished]\n"
@@ -202,6 +240,7 @@ def create_bot():
                 current_time_str = now.strftime("%H:%M")
                 
                 crons = get_all_crons()
+                oneshots = get_all_oneshots()
                 
                 # Silent daily memory reset at 23:59 for ALL users (saves API token costs)
                 if current_time_str == "23:59":
@@ -218,6 +257,16 @@ def create_bot():
                         logger.info(f"Triggering cron #{c['id']} for user {user_id}")
                         prompt = f"[Cron Triggered Automatically] The scheduled time {current_time_str} has arrived. Please execute this instructional task immediately and report the results: {c['prompt']}"
                         task = enqueue_task(user_id, prompt)
+                        start_worker_if_needed(user_id)
+                
+                # Check one-shots
+                for c in oneshots:
+                    if c.get("time") <= current_min_str:
+                        user_id = c["user_id"]
+                        logger.info(f"Triggering oneshot #{c['id']} for user {user_id}")
+                        prompt = f"[One-shot Task Triggered Automatically] The scheduled date/time {c.get('time')} has arrived. Please execute this instructional task immediately and report the results: {c['prompt']}"
+                        task = enqueue_task(user_id, prompt)
+                        delete_oneshot(user_id, c["id"])
                         start_worker_if_needed(user_id)
             
             time.sleep(10)
@@ -272,17 +321,28 @@ def create_bot():
     def handle_crons(message):
         user_id = message.from_user.id
         crons = get_all_crons()
+        oneshots = get_all_oneshots()
         user_crons = [c for c in crons if c["user_id"] == user_id]
+        user_oneshots = [c for c in oneshots if c["user_id"] == user_id]
         
-        if not user_crons:
-            bot.reply_to(message, "No active cron tasks.", parse_mode='Markdown')
+        reply_lines = []
+        if user_crons:
+            reply_lines.append("⏰ *Scheduled Daily Tasks*")
+            reply_lines.extend([f"`#{c['id']}` : 🕒 `{c['time']}` -> {c['prompt']}" for c in user_crons])
+            reply_lines.append("")
+            
+        if user_oneshots:
+            reply_lines.append("📌 *Scheduled One-shot Tasks*")
+            reply_lines.extend([f"`#{c['id']}` : 📅 `{c['time']}` -> {c['prompt']}" for c in user_oneshots])
+            
+        if not reply_lines:
+            bot.reply_to(message, "No active scheduled tasks.", parse_mode='Markdown')
             return
             
-        lines = [f"`#{c['id']}` : 🕒 `{c['time']}` -> {c['prompt']}" for c in user_crons]
         try:
-            bot.reply_to(message, "⏰ *Scheduled Daily Tasks*\n" + "\n".join(lines), parse_mode='Markdown')
+            bot.reply_to(message, "\n".join(reply_lines), parse_mode='Markdown')
         except telebot.apihelper.ApiTelegramException:
-            bot.reply_to(message, "⏰ Scheduled Daily Tasks\n" + "\n".join(lines))
+            bot.reply_to(message, "\n".join(reply_lines))
 
     @bot.message_handler(commands=['tasks'])
     def handle_tasks(message):

@@ -136,3 +136,43 @@ def delete_cron(user_id: int, cron_id: int) -> bool:
         return False
     _save_crons(new_crons)
     return True
+
+ONESHOTS_FILE = os.path.join(os.path.dirname(os.path.dirname(__file__)), "workspace", "oneshots.json")
+
+def _load_oneshots():
+    if not os.path.exists(ONESHOTS_FILE):
+        return []
+    try:
+        with open(ONESHOTS_FILE, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except Exception:
+        return []
+
+def _save_oneshots(oneshots):
+    os.makedirs(os.path.dirname(ONESHOTS_FILE), exist_ok=True)
+    with open(ONESHOTS_FILE, "w", encoding="utf-8") as f:
+        json.dump(oneshots, f, indent=4, ensure_ascii=False)
+
+def get_all_oneshots() -> list:
+    return _load_oneshots()
+
+def add_oneshot(user_id: int, time_str: str, prompt: str) -> dict:
+    oneshots = _load_oneshots()
+    oneshot_id = 1 if not oneshots else max(c.get("id", 0) for c in oneshots) + 1
+    new_oneshot = {
+        "id": oneshot_id,
+        "user_id": user_id,
+        "time": time_str,
+        "prompt": prompt
+    }
+    oneshots.append(new_oneshot)
+    _save_oneshots(oneshots)
+    return new_oneshot
+
+def delete_oneshot(user_id: int, oneshot_id: int) -> bool:
+    oneshots = _load_oneshots()
+    new_oneshots = [c for c in oneshots if not (c["id"] == oneshot_id and c["user_id"] == user_id)]
+    if len(oneshots) == len(new_oneshots):
+        return False
+    _save_oneshots(new_oneshots)
+    return True

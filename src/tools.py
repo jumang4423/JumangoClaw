@@ -117,3 +117,43 @@ DELETE_CRON_TOOL_SCHEMA = {
         }
     }
 }
+
+ADD_ONESHOT_TOOL_SCHEMA = {
+    "type": "function",
+    "function": {
+        "name": "add_oneshot",
+        "description": "Schedules a one-shot (single execution) task that runs at a specific date and time in the future. Use this when the user asks to be reminded or to do something once at a later time (e.g., 'remind me in 5 minutes', 'do this on April 6th morning').",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "datetime": {
+                    "type": "string",
+                    "description": "The exact date and time to execute the task in YYYY-MM-DD HH:MM format (timezone JST, e.g., '2026-04-06 08:00', '2026-03-22 17:45')."
+                },
+                "prompt": {
+                    "type": "string",
+                    "description": "The exact prompt/instruction that the agent will execute at that time."
+                }
+            },
+            "required": ["datetime", "prompt"]
+        }
+    }
+}
+
+DELETE_ONESHOT_TOOL_SCHEMA = {
+    "type": "function",
+    "function": {
+        "name": "delete_oneshot",
+        "description": "Deletes a scheduled one-shot task by its ID.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "oneshot_id": {
+                    "type": "integer",
+                    "description": "The ID of the one-shot task to delete."
+                }
+            },
+            "required": ["oneshot_id"]
+        }
+    }
+}

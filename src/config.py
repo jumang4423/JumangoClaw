@@ -75,6 +75,9 @@ def get_system_prompt() -> str:
     machine = platform.machine()
     prompt += f"\n\n=== HOST ENVIRONMENT ===\n"
     prompt += f"OS: {os_name} {platform.release()} ({machine})\n"
+    from datetime import datetime
+    now_str = datetime.now().strftime('%Y-%m-%d %H:%M:%S (JST)')
+    prompt += f"Current Time: {now_str}\n"
     if os_name == "Darwin":
         prompt += "Note: You are on macOS. Use `brew` instead of `apt`. Check paths carefully since you are not on Linux.\n"
     elif os_name == "Linux":

@@ -3,7 +3,11 @@ import json
 import time
 from openai import OpenAI
 from src.config import OPENROUTER_API_KEY, get_system_prompt, MODEL_ID, MODEL_LIMITS
-from src.tools import BASH_TOOL_SCHEMA, SEND_FILE_TOOL_SCHEMA, ADD_CRON_TOOL_SCHEMA, DELETE_CRON_TOOL_SCHEMA
+from src.tools import (
+    BASH_TOOL_SCHEMA, SEND_FILE_TOOL_SCHEMA, 
+    ADD_CRON_TOOL_SCHEMA, DELETE_CRON_TOOL_SCHEMA,
+    ADD_ONESHOT_TOOL_SCHEMA, DELETE_ONESHOT_TOOL_SCHEMA
+)
 
 logger = logging.getLogger(__name__)
 
@@ -37,7 +41,11 @@ def get_ai_response(messages):
             response = client.chat.completions.create(
                 model=MODEL_ID,
                 messages=payload_messages,
-                tools=[BASH_TOOL_SCHEMA, SEND_FILE_TOOL_SCHEMA, ADD_CRON_TOOL_SCHEMA, DELETE_CRON_TOOL_SCHEMA],
+                tools=[
+                    BASH_TOOL_SCHEMA, SEND_FILE_TOOL_SCHEMA, 
+                    ADD_CRON_TOOL_SCHEMA, DELETE_CRON_TOOL_SCHEMA,
+                    ADD_ONESHOT_TOOL_SCHEMA, DELETE_ONESHOT_TOOL_SCHEMA
+                ],
                 extra_body={"reasoning": {"enabled": True}}
             )
             logger.info("Successfully received response from OpenRouter.")
