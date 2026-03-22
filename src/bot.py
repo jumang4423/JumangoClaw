@@ -4,6 +4,7 @@ import json
 import threading
 from src.config import TELEGRAM_KEY
 from src.state import (
+    clear_history, add_message, get_history, remove_last_message,
     set_abort_flag, get_abort_flag, get_user_queue, enqueue_task, 
     get_all_tasks, cancel_task, active_tasks, get_all_crons, add_cron, delete_cron,
     get_all_oneshots, add_oneshot, delete_oneshot
