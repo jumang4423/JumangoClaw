@@ -42,3 +42,10 @@ Commands:
   user        View a user's profile.
   user-posts  List a user's tweets.
   whoami      Show the currently authenticated user's profile.
+
+
+
+
+
+
+POSTING TWEET is PROHABITED!!! DO NOT BREAK MY ACCOUNT!!!

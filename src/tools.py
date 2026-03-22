@@ -1,6 +1,7 @@
 import subprocess
 import logging
 import os
+import re
 
 logger = logging.getLogger(__name__)
 
@@ -8,6 +9,16 @@ def execute_bash(command: str) -> str:
     """Executes a bash command and returns truncated output."""
     logger.info(f"Executing bash command: {command}")
     
+    if re.search(r'\b(rm|mv|reboot|shutdown)\b', command):
+        msg = "Error: Command execution aborted. The 'rm', 'mv', 'reboot', and 'shutdown' commands are currently restricted for safety reasons."
+        logger.warning(f"Blocked dangerous command: {command}")
+        return msg
+        
+    if "twitter post" in command:
+        msg = "Error: Command execution aborted. Automated 'twitter post' commands are currently restricted for safety reasons."
+        logger.warning(f"Blocked dangerous command: {command}")
+        return msg
+        
     env = os.environ.copy()
     local_bin = os.path.expanduser("~/.local/bin")
     if local_bin not in env.get("PATH", ""):
@@ -122,7 +133,7 @@ ADD_ONESHOT_TOOL_SCHEMA = {
     "type": "function",
     "function": {
         "name": "add_oneshot",
-        "description": "Schedules a one-shot (single execution) task that runs at a specific date and time in the future. Use this when the user asks to be reminded or to do something once at a later time (e.g., 'remind me in 5 minutes', 'do this on April 6th morning').",
+        "description": "Schedules a one-shot (single execution) task that runs at a specific date and time in the future. This tool is primarily used as a REMINDER system for the user. Use this proactively whenever the user asks to be reminded of something, to remember something (覚えて), or to do something once at a later time (e.g., 'remind me in 5 minutes', 'do this on April 6th morning').",
         "parameters": {
             "type": "object",
             "properties": {
