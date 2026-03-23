@@ -20,6 +20,10 @@ if not OPENROUTER_API_KEY:
     raise ValueError("Missing OPENROUTER_API_KEY in .env file")
 if not TELEGRAM_KEY:
     raise ValueError("Missing TELEGRAM_KEY in .env file")
+if not SAKURA_API_KEY:
+    raise ValueError("Missing SAKURA_API_KEY in .env file")
+if not SAKURA_MODEL_ID:
+    raise ValueError("Missing SAKURA_MODEL_ID in .env file")
 
 MODEL_LIMITS = {
     "name": OPENROUTER_MODEL_ID,

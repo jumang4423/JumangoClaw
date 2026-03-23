@@ -29,14 +29,12 @@ openrouter_client = OpenAI(
 )
 
 # SAKURA client (primary)
-sakura_client = None
-if SAKURA_API_KEY:
-    logger.info("Initializing OpenAI Client for SAKURA...")
-    sakura_client = OpenAI(
-        base_url="https://api.ai.sakura.ad.jp/v1",
-        api_key=SAKURA_API_KEY,
-        max_retries=0,
-    )
+logger.info("Initializing OpenAI Client for SAKURA...")
+sakura_client = OpenAI(
+    base_url="https://api.ai.sakura.ad.jp/v1",
+    api_key=SAKURA_API_KEY,
+    max_retries=0,
+)
 
 
 def _build_payload_messages(messages):
@@ -63,7 +61,14 @@ def _call_api(client, model_id, payload_messages, provider_name, extra_body=None
         kwargs["extra_body"] = extra_body
     response = client.chat.completions.create(**kwargs)
     logger.info(f"Successfully received response from {provider_name}.")
-    return response.choices[0].message
+    
+    message = response.choices[0].message
+    # Strip reasoning for SAKURA if present
+    if provider_name == "SAKURA" and message.content and "</think>" in message.content:
+        logger.info("Stripping reasoning from SAKURA response...")
+        message.content = message.content.split("</think>")[-1].strip()
+        
+    return message
 
 
 def get_ai_response(messages):
@@ -74,14 +79,13 @@ def get_ai_response(messages):
     payload_messages = _build_payload_messages(messages)
 
     # 1. Try SAKURA first (primary)
-    if sakura_client and SAKURA_MODEL_ID:
-        try:
-            return _call_api(
-                sakura_client, SAKURA_MODEL_ID, payload_messages, 
-                "SAKURA", extra_body={"reasoning": {"enabled": True}}
-            )
-        except Exception as e:
-            logger.warning(f"SAKURA API call failed: {str(e)}. Falling back to OpenRouter...")
+    try:
+        return _call_api(
+            sakura_client, SAKURA_MODEL_ID, payload_messages, 
+            "SAKURA", extra_body={"reasoning": {"enabled": True}}
+        )
+    except Exception as e:
+        logger.warning(f"SAKURA API call failed: {str(e)}. Falling back to OpenRouter...")
 
     # 2. Fallback to OpenRouter (2 attempts)
     for attempt in range(2):
