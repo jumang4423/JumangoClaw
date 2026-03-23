@@ -74,32 +74,27 @@ def _call_api(client, model_id, payload_messages, provider_name, extra_body=None
 def get_ai_response(messages):
     """
     Sends the conversation history to the model and returns the assistant message.
-    Primary: SAKURA. Fallback: OpenRouter (2 retries). If all fail, return error string.
+    Primary: OpenRouter. Fallback: SAKURA. If both fail, return error string.
     """
     payload_messages = _build_payload_messages(messages)
 
-    # 1. Try SAKURA first (primary)
+    # 1. Try OpenRouter first (primary)
+    try:
+        return _call_api(
+            openrouter_client, OPENROUTER_MODEL_ID, payload_messages,
+            "OpenRouter", extra_body={"reasoning": {"enabled": True}}
+        )
+    except Exception as e:
+        logger.warning(f"OpenRouter API call failed: {str(e)}. Falling back to SAKURA...")
+
+    # 2. Fallback to SAKURA
     try:
         return _call_api(
             sakura_client, SAKURA_MODEL_ID, payload_messages, 
             "SAKURA", extra_body={"reasoning": {"enabled": True}}
         )
     except Exception as e:
-        logger.warning(f"SAKURA API call failed: {str(e)}. Falling back to OpenRouter...")
-
-    # 2. Fallback to OpenRouter (2 attempts)
-    for attempt in range(2):
-        try:
-            return _call_api(
-                openrouter_client, OPENROUTER_MODEL_ID, payload_messages,
-                "OpenRouter", extra_body={"reasoning": {"enabled": True}}
-            )
-        except Exception as e:
-            if attempt < 1:
-                logger.warning(f"OpenRouter API call failed (attempt {attempt + 1}/2): {str(e)}. Waiting 60s before retrying...")
-                time.sleep(60)
-            else:
-                logger.error(f"OpenRouter API call failed after 2 attempts: {str(e)}", exc_info=True)
+        logger.error(f"SAKURA API call failed as fallback: {str(e)}", exc_info=True)
 
     # 3. All providers failed — return error string
     error_msg = "All LLM providers failed. Please try again later."
