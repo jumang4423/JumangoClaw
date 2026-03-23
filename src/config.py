@@ -12,7 +12,9 @@ load_dotenv()
 
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
 TELEGRAM_KEY = os.getenv("TELEGRAM_KEY")
-MODEL_ID = os.getenv("MODEL_ID", "stepfun/step-3.5-flash:free")
+OPENROUTER_MODEL_ID = os.getenv("OPENROUTER_MODEL_ID", "stepfun/step-3.5-flash:free")
+SAKURA_API_KEY = os.getenv("SAKURA_API_KEY")
+SAKURA_MODEL_ID = os.getenv("SAKURA_MODEL_ID")
 
 if not OPENROUTER_API_KEY:
     raise ValueError("Missing OPENROUTER_API_KEY in .env file")
@@ -20,7 +22,7 @@ if not TELEGRAM_KEY:
     raise ValueError("Missing TELEGRAM_KEY in .env file")
 
 MODEL_LIMITS = {
-    "name": MODEL_ID,
+    "name": OPENROUTER_MODEL_ID,
     "context_length": 256000,
     "max_completion_tokens": 8192
 }
@@ -45,7 +47,7 @@ def load_model_limits(model_id):
     return MODEL_LIMITS
 
 # Initialize cache
-MODEL_LIMITS.update(load_model_limits(MODEL_ID) or {})
+MODEL_LIMITS.update(load_model_limits(OPENROUTER_MODEL_ID) or {})
 
 BASE_SYSTEM_PROMPT = """You are a Telegram agent named JumangoClaw. You interact with the user, execute commands to operate the PC, and notify the user of the final results. You must always respond concisely with the final results.
 
