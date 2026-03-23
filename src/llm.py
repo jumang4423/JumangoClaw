@@ -76,7 +76,10 @@ def get_ai_response(messages):
     # 1. Try SAKURA first (primary)
     if sakura_client and SAKURA_MODEL_ID:
         try:
-            return _call_api(sakura_client, SAKURA_MODEL_ID, payload_messages, "SAKURA")
+            return _call_api(
+                sakura_client, SAKURA_MODEL_ID, payload_messages, 
+                "SAKURA", extra_body={"reasoning": {"enabled": True}}
+            )
         except Exception as e:
             logger.warning(f"SAKURA API call failed: {str(e)}. Falling back to OpenRouter...")
 
