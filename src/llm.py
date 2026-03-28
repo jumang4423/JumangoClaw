@@ -37,15 +37,75 @@ sakura_client = OpenAI(
 )
 
 
+def _sanitize_history(messages):
+    """Ensures message history doesn't contain orphaned tool calls/responses."""
+    sanitized = []
+    for i, m in enumerate(messages):
+        role = m.get("role")
+        if role == "tool":
+            # Check if any prior message is an assistant with this tool_call_id
+            valid = False
+            for prev in reversed(sanitized):
+                if prev.get("role") == "assistant" and "tool_calls" in prev and prev["tool_calls"]:
+                    ids = [tc.get("id") if isinstance(tc, dict) else tc.id for tc in prev["tool_calls"]]
+                    if m.get("tool_call_id") in ids:
+                        valid = True
+                        break
+            if valid:
+                sanitized.append(m)
+        elif role == "assistant" and m.get("tool_calls"):
+            # Ensure it has matching tool responses later
+            has_reply = False
+            for j in range(i + 1, len(messages)):
+                if messages[j].get("role") == "tool":
+                    has_reply = True
+                    break
+                elif messages[j].get("role") in ["user", "assistant"]:
+                    break
+            if not has_reply:
+                content = m.get("content")
+                if not content:
+                    content = "[Action interrupted or completed]"
+                # Create a fresh dict with only safe fields to avoid pyre lint errors
+                sanitized.append({
+                    "role": "assistant",
+                    "content": content
+                })
+            else:
+                sanitized.append(m)
+        else:
+            sanitized.append(m)
+    return sanitized
+
 def _build_payload_messages(messages):
-    """Prepend system prompt and enforce context limits."""
-    payload_messages = [{"role": "system", "content": get_system_prompt()}] + messages
-    max_chars = MODEL_LIMITS.get("context_length", 256000) * 3
+    """Prepend system prompt and enforce context limits safely."""
+    # First sanitize raw messages
+    safe_messages = _sanitize_history([m for m in messages])
+    
+    payload_messages = [{"role": "system", "content": str(get_system_prompt())}]
+    for m in safe_messages:
+        payload_messages.append(m)
+        
+    max_chars = int(MODEL_LIMITS.get("context_length", 256000)) * 3
+    
     current_chars = sum(len(str(m.get("content", ""))) for m in payload_messages)
     if current_chars > max_chars * 0.8:
         logger.warning(f"Context approaching model limits ({current_chars}/{max_chars}). Splitting old session context...")
+        # Safely remove from the beginning (index 1), ensuring we don't break tool pairs
         while sum(len(str(m.get("content", ""))) for m in payload_messages) > max_chars * 0.6 and len(payload_messages) > 5:
-            payload_messages.pop(2)
+            # Pop index 1 (the oldest non-system message)
+            popped = payload_messages.pop(1)
+            # If we just popped an assistant with tool_calls, we must pop the corresponding tool messages
+            if isinstance(popped, dict) and popped.get("role") == "assistant" and popped.get("tool_calls"):
+                while len(payload_messages) > 1 and isinstance(payload_messages[1], dict) and payload_messages[1].get("role") == "tool":
+                    payload_messages.pop(1)
+            
+    # Final sanitize just to be absolutely sure after popping
+    if len(payload_messages) > 1:
+        sys_prompt = payload_messages[0]
+        rest_messages = [m for m in payload_messages[1:]]
+        final_safe = _sanitize_history(rest_messages)
+        return [sys_prompt] + final_safe
     return payload_messages
 
 
